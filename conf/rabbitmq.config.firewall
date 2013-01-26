@@ -1,0 +1,12 @@
+[
+  {rabbit, [ {tcp_listeners, [5672] },
+             {ssl_listeners, [5673] },
+             {ssl_options, [
+               {cacertfile, "/etc/rabbitmq/ssl/ca/cacert.pem" },
+               {certfile, "/etc/rabbitmq/ssl/server/rabbit1.cert.pem" },
+               {keyfile, "/etc/rabbitmq/ssl/server/rabbit1.key.pem" },
+               {verify, verify_peer},
+               {fail_if_no_peer_cert, false }]}
+  ]},
+  {kernel, [{inet_dist_listen_min, 9100},{inet_dist_listen_max, 9105}]}
+].

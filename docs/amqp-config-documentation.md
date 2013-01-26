@@ -1,0 +1,556 @@
+
+# Installing RabbitMQ on CentOS 6.3 Minimal
+
+This tutorial will demonstrate how to install RabbitMQ 3.x on CentOS 6.3 ("minimal" profile).
+
+This install was performed using VMWare Fusion on OSX, but should demonstrate the process on most environments using Linux-supported drivers.  The virtual was 1-core, 1.6GB RAM, 6GB HDD space; I did not use the quick setup VMWare offers.
+
+There are two ways of installing RabbitMQ on CentOS.  The ways differ based on which distribution of Erlang you chose to use (the one out of EPEL or a later version from Erlang Solutions).  We will demonstrate both ways in this example.
+
+One of the goals of this tutorial is to not install anymore software than needed.  We will use "vi" instead of "pico" or "nano" because that's what's bundled with CentOS minimal profile.  If you would rather use another text editor, please install it on your own.
+
+## Install Linux
+
+### Example Settings:
+ - Hostname: rabbit3.warren
+ - Root Password: rabbit
+ - Disk: Use all space and let CentOS allocate as it sees fit.
+ - Profile.  Use default [minimal].  This will not include a GUI.
+
+<a href="https://dl.dropbox.com/u/12311372/RabbitMQ-Doc/i01.png"><img style="max-height: 500px;"
+  src="https://dl.dropbox.com/u/12311372/RabbitMQ-Doc/i01.png">
+</a>
+
+### Installs...
+
+<a href="https://dl.dropbox.com/u/12311372/RabbitMQ-Doc/i02.png"><img style="max-height: 500px;"
+  src="https://dl.dropbox.com/u/12311372/RabbitMQ-Doc/i02.png">
+</a>
+
+### Reboot the machine.
+
+<a href="https://dl.dropbox.com/u/12311372/RabbitMQ-Doc/i03.png"><img style="max-height: 500px;"
+  src="https://dl.dropbox.com/u/12311372/RabbitMQ-Doc/i03.png">
+</a>
+
+## Create the Rabbit account
+
+We don't want to do everything as root, so we'll create an account called "rabbit".
+
+1.  Login as root (password=rabbit)
+2.  Create the 'rabbit' user account.
+
+  `# -m creates the home directory
+  adduser rabbit -m`
+
+3.  Change user "rabbit"'s password to "rabbit".
+
+  `# using "rabbit" as password
+  passwd rabbit`
+
+4.  Add "rabbit" to the sudoers file.
+
+  `vi /etc/sudoers`
+
+  Add the following line in the file:
+
+  `rabbit  ALL=(ALL) ALL`
+
+5.  Log in as user "rabbit"
+
+  `su - rabbit`
+
+
+## Configure Networking
+
+Network settings will depend on your network environment.  The following reflects a DHCP setup.
+
+1.  Edit the settings for your network device.  This will be a file in `/etc/sysconfig/network-scripts/`, probably `ifcfg-eth0`:
+
+  `sudo /etc/sysconfig/network-scripts/ifcfg-eth0`
+
+  Make your config file look something like this.
+
+  `DEVICE="eth0"
+  BOOTPROTO="dhcp"
+  NM_CONTROLLED="yes"
+  ONBOOT=yes
+  TYPE="Ethernet"
+  UUID="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+  IPV6INIT=yes
+  HWADDR=xx:xx:xx:xx:xx:xx`
+
+  > Where the x's are specific to your machine.  Much of this information will already by in the file.  You will probably only need to set "ONBOOT" to "yes".
+
+2.  Restart the network service.
+
+  `sudo service network restart`
+
+3.  Verify the internet (or intranet) is accessible.
+
+  `curl www.google.com`
+
+## Update the OS
+
+At the time of this posting, there was 43 updates to the OS and core packages installed on the minimum profile.  We'll update them now to ensure the OS has it's security patches and bug fixes applied.
+
+`sudo yum update`
+
+> This is about 180mb; install took about 5 minutes.
+
+We will also install `wget`, a common Linux utility for downloading files which is not included in the minimum profile.  
+
+`sudo yum install wget`
+
+> For security reasons, it's probably best to remove this when your done installing and configuring your server.
+
+`sudo yum remove wget`
+
+## Install Erlang Dependencies
+
+These are the minimum number of libraries needed to install Erlang, which is the only dependency of RabbitMQ
+
+`sudo yum install gcc glibc-devel make ncurses-devel openssl-devel autoconf`
+
+> About 34mb and should take a couple of minutes.
+
+## Acquire RabbitMQ RPM
+
+This is the last common step in the install.  We will import the RabbitMQ company's public key and then download the RPM from their website.
+
+1.  Import RabbitMQ's Public Key
+
+  `sudo rpm --import http://www.rabbitmq.com/rabbitmq-signing-key-public.asc`
+
+2.  Download RabbitMQ RPM.  Were assuming you are downloading this to the "rabbit" user's home folder `/home/rabbit`:
+
+  `wget http://www.rabbitmq.com/releases/rabbitmq-server/v3.0.1/rabbitmq-server-3.0.1-1.noarch.rpm`
+
+> The file is only about 3.5mb and should download in about 3s.
+
+## Installing Erlang
+
+There are two options for installing Erlang via RPM:
+
+1.  Use the EPEL repository.  There is a reasonably new (couple months old) Erlang distribution (R14B) available, and the RabbitMQ RPM's dependencies map to this Erlang RPM.  This is the cleanest install, but you don't benefit from having a newer Erlang VM.
+
+2.  Use the Erlang Solutions' RPM.  The company is creating RPM's of the latest Erlang releases (R15B03) and making them available from their website.  Checking the Erlang project site, the RPM provided was the latest version of Erlang available at the time.  The RabbitMQ RPM will cry about unsatisfied dependencies when installed this method unless the --nodeps flag is used to install the RPM.
+
+### Installing via EPEL
+
+1.  Download the EPEL RPM.
+
+  `wget http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm`
+
+2.  Install the EPEL RPM.
+
+  `sudo rpm -Uvh epel-release-6*.rpm`
+
+3.  Install Erlang via "yum"
+
+  `sudo yum install erlang`
+
+### Installing via Erlang Solutions RPM
+
+1.  Import Erlang Solutions Certificate
+
+  `sudo rpm --import http://binaries.erlang-solutions.com/debian/erlang_solutions.asc`
+
+2.  Download the Erlang RPM from Erlang Solutions
+
+  `wget https://elearning.erlang-solutions.com/couchdb//rbingen_adapter//package_R15B03_centos664_1355850825/esl-erlang-R15B03-2.x86_64.rpm
+`
+
+  > This download is uber slow, so please be patient.  If you want, you are welcome to download the R15B03 RPM from me: https://dl.dropbox.com/u/12311372/esl-erlang-R15B03-2.x86_64.rpm
+
+3.  Install the Erlang Solutions RPM
+
+  `sudo yum install esl-erlang-R15B03-2.x86_64.rpm`
+
+> Thank you [Jim Jose](http://blog.jimjose.in/) whose [article](http://blog.jimjose.in/2012/04/installing-rabbitmq-2-8-with-erlang-r15b-on-centos6/) helped in finding an up-to-date Erlang RPM.
+
+## Installing RabbitMQ
+
+### If your Erlang RPM is from EPEL
+
+`sudo yum install rabbitmq-server-3.0.1-1.noarch.rpm`
+
+### If your Erlang RPM is from Erlang Solutions
+
+`sudo rpm --nodeps -Uvh rabbitmq-server-3.0.1-1.noarch.rpm`
+
+
+## Verify RabbitMQ Installation
+
+Start the RabbitMQ server to ensure it was correctly installed:
+
+`sudo service rabbitmq-server start`
+
+<a href="https://dl.dropbox.com/u/12311372/RabbitMQ-Doc/i04.png"><img style="max-height: 500px;"
+  src="https://dl.dropbox.com/u/12311372/RabbitMQ-Doc/i04.png">
+</a>
+
+>  *iptables* is turned on automatically with a CentOS install. In order to connect to the broker, you will need to either turn *iptables* off (`sudo service iptables stop`) or configure *iptables* to allow connections on port 5672.  For more on *iptables* and RabbitMQ, go to the "Configuring *iptables* for RabbitMQ" section.
+
+
+
+
+
+# Enabling RabbitMQ Management Console
+
+1.  Ensure RabbitMQ is running.
+
+  `sudo service rabbitmq-server start`
+
+2.  Enable the RabbitMQ Management Console
+
+  `sudo rabbitmq-plugins enable rabbitmq_management`
+
+3.  Restart RabbitMQ.
+
+  `sudo service rabbitmq-server restart`
+
+>  *iptables* is turned on automatically with a CentOS install. In order to visit the RabbitMQ Management Console, you will need to either turn *iptables* off (`sudo service iptables stop`) or configure *iptables* to allow connections on port 15672.  For more on *iptables* and RabbitMQ, go to the "Configuring *iptables* for RabbitMQ" section.
+
+
+
+
+
+
+# Configuring *iptables* for a single instance of RabbitMQ
+
+It's common for developers to turn off *iptables* because it's an annoyance, but for an integration or production system, this is a nonstarter (*iptables* needs to be turned on).  Fortunately, configuring *iptables* is rather easy.
+
+There are two ways of configuring *iptables*:
+
+1.  Edit the *iptables* configuration directly.
+2.  Use the `iptables` command to add or remove rules.
+
+Using either method, we need to open of 1-3 ports, depending on your use-case:
+
+- **5672**:  The default port for AMQP connections.
+- **5673**:  The default port for TLS/SSL AMQP connections.
+- **15672**:  The default port for the RabbitMQ Management Console.
+
+> The RabbitMQ Management Console used to use the port **55672**, so if you are using an older version of Rabbit, adjust accordingly. 
+
+## Editing the *iptables* configuration file.
+
+1.  Open the `/etc/sysconfig/iptables` file for editing.
+
+  Your current file should look like this.
+
+  `# Firewall configuration written by system-config-firewall
+  \# Manual customization of this file is not recommended.
+  *filter
+  :INPUT ACCEPT [0:0]
+  :FORWARD ACCEPT [0:0]
+  :OUTPUT ACCEPT [0:0]
+  -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+  -A INPUT -p icmp -j ACCEPT
+  -A INPUT -i lo -j ACCEPT
+  -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+  -A INPUT -j REJECT --reject-with icmp-host-prohibited
+  -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+  COMMIT`
+  
+  We want to add the following entries to the top of the file, right under the `:OUTPUT ACCEPT [2:120]` line: 
+  
+  `-A INPUT -p tcp -m tcp --dport 15672 -j ACCEPT
+  -A INPUT -p tcp -m tcp --dport 5672 -j ACCEPT
+  -A INPUT -p tcp -m tcp --dport 5673 -j ACCEPT`
+  
+  Your file should look something like this when you are done.
+  
+  `*filter
+  :INPUT ACCEPT [0:0]
+  :FORWARD ACCEPT [0:0]
+  :OUTPUT ACCEPT [2:120]
+  -A INPUT -p tcp -m tcp --dport 15672 -j ACCEPT
+  -A INPUT -p tcp -m tcp --dport 5672 -j ACCEPT
+  -A INPUT -p tcp -m tcp --dport 5673 -j ACCEPT
+  -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT 
+  -A INPUT -p icmp -j ACCEPT 
+  -A INPUT -i lo -j ACCEPT 
+  -A INPUT -p tcp -m state --state NEW -m tcp --dport 22 -j ACCEPT 
+  -A INPUT -j REJECT --reject-with icmp-host-prohibited 
+  -A FORWARD -j REJECT --reject-with icmp-host-prohibited 
+  COMMIT`
+
+2.  Restart *iptables*.
+
+  `sudo service iptables restart`
+
+## Using the *iptables* command to add rules.
+
+1.  For each port you need unblocked, you will follow the pattern:
+  
+  `sudo iptables -I INPUT 1 -p tcp --dport [port #] -j ACCEPT`
+  
+  So to unblock the non-SSL, SSL and Management Console:
+  
+  `sudo iptables -I INPUT 1 -p tcp --dport 5672 -j ACCEPT
+  sudo iptables -I INPUT 1 -p tcp --dport 5673 -j ACCEPT
+  sudo iptables -I INPUT 1 -p tcp --dport 15672 -j ACCEPT`
+
+  > Note that the `-I INPUT 1` literally means to register this rule before other rules.  If you don't do this, *iptables* will not open your port because a previous rule will supersede that rule, blocking access to the port.
+
+2.  Now we need to save the configuration:
+
+  `sudo service iptables save`
+
+3.  And restart *iptables*:
+
+  `sudo service iptables restart`
+
+## Verification
+
+Test that you can access the ports.  There is a test client for AMQP provided in the [CMF-AMQP-Configuration Repository](https://github.com/Berico-Technologies/CMF-AMQP-Configuration).  Testing the RabbitMQ Management Console is as simple as visiting the site in your browser.
+
+
+
+
+
+
+# Configuring *iptables* for a RabbitMQ Cluster
+
+In this tutorial, we will configure *iptables* and RabbitMQ to allow RabbitMQ brokers to coordinate with each other.  This example builds on the previous tutorial *Configuring **iptables** for a single instance of RabbitMQ*, so we will only demonstrate how to configure *iptables* using the `iptables` command.
+
+More importantly, the steps in this tutorial need to be performed on every node in the RabbitMQ cluster.
+
+1.  Edit the RabbitMQ configuration file to force Erlang to use the specified port range when using the "Erlang Distribution Protocol".
+
+  >  Erlang has a special "inter-process communication" framework allowing processes on the same machine, or across a network, to communicate with each other.  It is this mechanism that RabbitMQ uses to coordinate between brokers.  However, unless told not to do so, Erlang will randomly choose the ports it will use to communicate.
+
+  a.  Edit/Create the RabbitMQ configuration file.
+
+  >  RabbitMQ configuration is stored in the `/etc/rabbitmq/` directory in the `rabbitmq.config` file.  On virgin installs, this file will not exist and will have to be created.  RabbitMQ will detect the presence of `rabbitmq.config` when it is started and configure itself accordingly.  Think of this file as an `overrides` file.  You do not have to fully configure RabbitMQ in this file, merely override the settings you need changed.
+
+  `sudo vi /etc/rabbitmq/rabbitmq.config`
+
+  b.  Instruct the Erlang kernel to use the following port range (9100-9105) for the Erlang Distribution protocol:
+
+  `[{kernel, [ {inet_dist_listen_min, 9100}, 
+                {inet_dist_listen_max, 9105} ]}].`
+
+  > RabbitMQ's configuration is quite literally an Erlang *tuple*.  That's the reason why it has a *funky* syntax.
+
+  c.  Restart RabbitMQ.
+
+  `sudo service rabbitmq-server restart`
+
+2.  Add rules to *iptables* to allow RabbitMQ to communicate with other RabbitMQ brokers.
+
+  a.  First we need to unblock the EPMD port (Erlang Port Mapper Daemon); EPMD is a registry Erlang uses to determine which applications are running and on what port.
+
+  `sudo iptables -I INPUT 1 -p tcp --dport 4369 -j ACCEPT`
+
+  b.  Next, we need to unblock port range RabbitMQ will use for interprocess communication:
+
+  `sudo iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport 9100:9105 -j ACCEPT`
+
+  c.  Save the configuration.
+
+  `sudo service iptables save`
+
+  d.  Finally, restart *iptables*.
+
+  `sudo service iptables restart`
+
+3.  As a final precautionary step, reboot the server.
+
+  `sudo reboot`
+
+  >  The Erlang Distribution protocol requires services to register with a unique name (RabbitMQ uses "rabbit").  Sometimes the Erlang process registered with the "rabbit" handle will fail to stop.  Rebooting the machine will force the process to end and EPMD to restart, solving this problem.
+
+## Verification
+
+We'll verify that this works when we *Cluster Rabbit*, in the next tutorial.
+
+> Thank you to the author of the [Loose XAML](http://loosexaml.wordpress.com/) blog for an excellent [article](http://loosexaml.wordpress.com/2012/08/06/rabbitmq-clustering-on-centos-6-12/) on configuring RabbitMQ and *iptables* for clustering.
+
+
+
+
+
+
+
+# Clustering RabbitMQ
+
+There are two ways to cluster RabbitMQ.  The first is to use the commands provided by `rabbitmqctl` and the second is to use configuration.  This tutorial will only demonstrate the first way, in part, because it can be done in a consistent fashion.  We encountered a couple of issues using "Auto-configuration" which caused contention between nodes.  This may have been an error on our part, but given the fact that the `rabbitmqctl` method is actually easier, we didn't invest any time into figuring out the error in our ways.
+
+1.  Ensure you can reach all the nodes in your cluster.
+
+  >  If you have been following this tutorial, you will note that we have not setup DNS or edited the hosts file.  For this tutorial we will add some entries into the host file as a simple solution.  If you already have networking setup in your cluster and can reach nodes by hostname, please ignore.
+
+  a.  Find out the IP's of each node in your cluster.
+
+  On each server, execute:
+
+  `ifconfig`
+
+  Write down the IP address of that server.  It will probably be the `inet addr` entry under either `eth0` or `eth1` (left column).
+
+  b.  Edit the `/etc/hosts` file of each server.
+
+  `sudo vi /etc/hosts`
+
+  Add an entry in the `hosts` file for every server in the cluster but the one you are physically on:
+
+  `xxx.xxx.xxx.xxx {hostname} {hostname}.{domain}`
+
+  For this tutorial, it would look like:
+
+  `127.0.0.1 localhost rabbit3 rabbit3.warren localhost4
+  192.168.192.154 rabbit1 rabbit1.warren
+  192.168.192.153 rabbit2 rabbit2.warren`
+
+  > We've also added the `rabbit3` entry to `localhost` so the machine knows it should loopback to itself.
+
+  Save the file and you are done.  Make sure all the nodes can reach each other:
+
+  `ping rabbit1
+  ping rabbit2`
+
+  > Press `control-z` to stop the `ping` command from *pinging* the server.
+
+2.  Ensure all nodes share the same Erlang cookie.
+
+  > The Erlang Distribution protocol will have Erlang processes authenticate with each other to ensure those processes are allowed to interact.  The algorithm used to perform the authentication is hash-based, that hash being stored in the "cookie" file.
+
+  a.  Chose a server in your cluster whose cookie will serve as the "canonical" cookie of the cluster.  Which server doesn't particularly matter.
+
+  b.  Copy the cookie from that server to all other servers participating in the cluster.  The cookie is stored in the `/var/lib/rabbitmq` directory and is called `.erlang.cookie`. Please note the period (.) in the name of the cookie (a hidden file in UNIX), so it won't come up in a `ls` command unless you use the -a switch (`ls -a`).
+
+  >  We recommend using `scp` to perform the copy, but you may choose any mechanism you want.  We will demonstrate the `scp` method.
+
+  `sudo scp /var/lib/rabbitmq/.erlang.cookie \
+         {user}@{host}:/home/{user}/erlang.cookie`
+
+   Replace {user} and {host} with the correct values.  In the case of this ongoing tutorial:
+
+  `sudo scp /var/lib/rabbitmq/.erlang.cookie \
+         rabbit@rabbit3:/home/rabbit/erlang.cookie`
+
+  > Please note that there is no period "." in the name of `erlang.cookie` file we are transferring to the *rabbit3* server.  This is because Linux will tell you `Permission denied` because it does not allow the creation of hidden files from a remote machine.  This is also the reason why we are copying the file to the home directory and not directly to `/var/lib/rabbitmq`.
+
+  > If you do not have `scp` installed on your machine (which is likely if you are using CentOS minimal profile), you can install it using `sudo yum install openssl-client`.
+
+  Move the cookie to the `/var/lib/rabbitmq` directory:
+
+  `sudo mv erlang.cookie /var/lib/rabbitmq/.erlang.cookie`
+
+  > And we've added the period "." back to the file's name.
+
+  This next step is precautionary.  Moving the cookie from one server to another may cause the file to be unaccessible to the *rabbitmq* user account (which runs the server).  With this in mind, we will transfer ownership of the cookie file to the *rabbitmq* user:
+
+  `sudo chmod rabbitmq /var/lib/rabbitmq/.erlang.cookie`
+
+  Restart RabbitMQ:
+
+  `sudo service rabbitmq-server restart`
+
+3.  Use `rabbitmqctl` to cluster the nodes.
+
+  To cluster a RabbitMQ node, you need to stop the RabbitMQ application on the Erlang VM, reset the node's configuration, tell it to going the cluster, and then start back up.
+
+  Stop the broker:
+
+  `sudo rabbitmqctl stop_app`
+
+  Reset the configuration on the node.  This is only necessary if your node was previously joined to another cluster.
+
+  `sudo rabbitmqctl reset`
+
+  Join the cluster:
+
+  `sudo rabbitmqctl join_cluster rabbit@rabbit1`
+
+  Start the broker:
+
+  `sudo rabbitmqctl start_app`
+
+  <a href="https://dl.dropbox.com/u/12311372/RabbitMQ-Doc/i05.png"><img style="max-height: 500px;"
+  src="https://dl.dropbox.com/u/12311372/RabbitMQ-Doc/i05.png">
+</a>
+
+  >  *rabbit@rabbit1* probably doesn't mean what you think.  It actually means the Erlang Distribution identifier for a process called  "rabbit" on the host "rabbit1".  When joining a cluster, there isn't any kind of "master" or "leader" node.  You could actually join the cluster by specifying *rabbit@rabbit2* and it would work identically.
+
+  >  By default, your node will be a "disk node".  Disk nodes store their state both on disk and in memory.  You can choose to have "ram nodes" which store their state in memory, unless a queue declared on that broker is configured to be persistent.
+
+  To join a node on the cluster as a RAM node:
+
+  `sudo rabbitmqctl join_cluster --ram rabbit@rabbit1`
+
+  To change the local cluster node to another type (back to disc):
+
+  `sudo rabbitmqctl stop_app
+  sudo rabbitmqctl change_cluster_node_type disc
+  sudo rabbitmqctl start_app`
+
+  Alternatively to change a disc node to a ram node:
+
+  `sudo rabbitmqctl stop_app
+  sudo rabbitmqctl change_cluster_node_type ram
+  sudo rabbitmqctl start_app`
+
+## Verify the Cluster's Status
+
+1.  `rabbitmqctl` offer the capability to determine the cluster's status from the shell:
+
+  `sudo rabbitmqctl cluster status`
+
+  <a href="https://dl.dropbox.com/u/12311372/RabbitMQ-Doc/i06.png"><img style="max-height: 500px;"
+  src="https://dl.dropbox.com/u/12311372/RabbitMQ-Doc/i06.png">
+</a>
+
+2.  The RabbitMQ Management Console is probably the best way to see the cluster's status, providing rich statistics about each node in the cluster.  Simply navigate to one of your Console instances in the browser.
+
+  <a href="https://dl.dropbox.com/u/12311372/RabbitMQ-Doc/i07.png"><img style="max-height: 500px;"
+  src="https://dl.dropbox.com/u/12311372/RabbitMQ-Doc/i07.png">
+</a>
+
+
+
+# Configuring SSL for RabbitMQ
+
+Configuring RabbitMQ for SSL is a fairly straight forward process.  It involves generating the certificates and key file for the server to perform SSL, and registering those files with RabbitMQ via the `rabbitmq.config` file.
+
+## Generating Certificates
+
+The difficult part of this process is knowing how to generate and manage Public-Key Infrastructure.  If you are unfamiliar with this process, or work in an organization that already has it's own infrastructure, we would recommend you consult with whomever manages that infrastructure to get the correct keys and certificates.
+
+In the event that you need to do this work on your own, we have a created a set of scripts that will simplify the process.  These scripts literally automate the process documented by RabbitMQ on this [page](http://www.rabbitmq.com/ssl.html).
+
+- Generating Certificates
+-- The easy way! CMF-AMQP-Configuration
+- Setting up the configuration file
+
+
+
+
+
+########################################################
+
+Binding non-SSL-capable AMQP Clients to SSL RabbitMQ
+- install stunnel
+- configure stunnel
+- generate client certificate
+- start stunnel
+- start client
+
+########################################################
+
+Securing Cluster nodes via Erlang SSL Distribution
+- You can't, at least I haven't figured it out.
+- process.
+
+########################################################
+
+Creating a RabbitMQ Cluster Enclave
+- 
+
+########################################################
+
+Proxying-Load Balancing RabbitMQ with HA Proxy
+- 

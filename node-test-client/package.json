@@ -1,0 +1,21 @@
+{ "name" : "node-test-client"
+, "description" : "Test of AMQP against and stunnel route to SSL AMQP."
+, "keywords" : [ "amqp" ]
+, "version" : "0.0.1"
+, "preferGlobal" : false
+, "author" : { "name" : "Richard Clayton" }
+, "dependencies": {
+	"amqp" : "https://github.com/postwait/node-amqp/tarball/master"
+}
+, "repository" :
+  { "type" : "git"
+  , "url" : "git://github.com/Berico-Technologies/CMF-Configuration.git"
+  }
+, "main" : "./run-test"
+, "engines" : { "node" : "0.4 || 0.5 || 0.6 || 0.8" }
+, "licenses" :
+  [ { "type" : "Apache 2.0"
+    , "url" : "http://www.apache.org/licenses/LICENSE-2.0.html"
+    }
+  ]
+}
