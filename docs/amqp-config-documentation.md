@@ -598,6 +598,10 @@ In the event that you need to do this work on your own, we have a created a set 
 
   The previous processes will have generated a lot of files that you will not need at the Broker.  Many of these files were created in the process of generating certificate signing requests (CSR), where a server or client certificate is "stamped" by the CA to establish a "chain of trust".
 
+  <a href="https://dl.dropbox.com/u/12311372/RabbitMQ-Doc/i11.png"><img style="max-height: 500px;"
+  src="https://dl.dropbox.com/u/12311372/RabbitMQ-Doc/i11.png">
+</a>
+
   For this tutorial, we will need the following certificates:
 
   - ca/cacert.pem:  The Certificate Authority's certificate.
@@ -629,6 +633,94 @@ In the event that you need to do this work on your own, we have a created a set 
       /etc/rabbitmq/ssl/server/rabbit3.key.pem
   sudo cp {/path/to/CMF-AMQP-Configuration/ssl/}server/rabbit3.cert.pem \
       /etc/rabbitmq/ssl/server/rabbit3.cert.pem`
+
+## Configuring RabbitMQ to support SSL Connections
+
+To configure RabbitMQ to support SSL, you simply need to add some minor configuration options to the `rabbitmq.config` in the `/etc/rabbitmq` directory.  
+
+>  If the file doesn't exist, we simply need to create it and RabbitMQ will pick up those changes upon start/restart.
+
+1.  Edit the `rabbitmq.config` file:
+
+  `sudo vi /etc/rabbitmq/rabbitmq.config`
+
+2.  Add the following configuration:
+
+  `[
+    {rabbit, [ {tcp_listeners, [5672] },
+               {ssl_listeners, [5673] },
+               {ssl_options, [
+                 {cacertfile, "/etc/rabbitmq/ssl/ca/cacert.pem" },
+                 {certfile, "/etc/rabbitmq/ssl/server/{hostname}.cert.pem" },
+                 {keyfile, "/etc/rabbitmq/ssl/server/{hostname}.key.pem" },
+                 {verify, verify_peer},
+                 {fail_if_no_peer_cert, false }]}
+    ]}
+  ].`
+
+  Where our configuration looks like:
+
+  `[
+    {rabbit, [ {tcp_listeners, [5672] },
+               {ssl_listeners, [5673] },
+               {ssl_options, [
+                 {cacertfile, "/etc/rabbitmq/ssl/ca/cacert.pem" },
+                 {certfile, "/etc/rabbitmq/ssl/server/rabbit3.cert.pem" },
+                 {keyfile, "/etc/rabbitmq/ssl/server/rabbit3.key.pem" },
+                 {verify, verify_peer},
+                 {fail_if_no_peer_cert, true }]}
+    ]}
+  ].`
+
+  And if you are already clustered with `iptables` configured:
+
+  `[
+    {rabbit, [ {tcp_listeners, [5672] },
+               {ssl_listeners, [5673] },
+               {ssl_options, [
+                 {cacertfile, "/etc/rabbitmq/ssl/ca/cacert.pem" },
+                 {certfile, "/etc/rabbitmq/ssl/server/rabbit3.cert.pem" },
+                 {keyfile, "/etc/rabbitmq/ssl/server/rabbit3.key.pem" },
+                 {verify, verify_peer},
+                 {fail_if_no_peer_cert, true }]}
+    ]},
+    {kernel, [ {inet_dist_listen_min, 9100}, 
+                {inet_dist_listen_max, 9105} ]}
+  ].`
+
+  There are some important options to note:
+
+  -  `tcp_listeners`:  This is the clear-text port to answer requests.  Remove this if you want your broker to only accept SSL.
+  -  `ssl_listeners`:  This is the port to accept SSL connections.  Make sure you have enabled that port in *iptables*.
+  
+  The SSL-specific options (`ssl_options`):
+    -  `cacertfile`:  The certificate file of the CA.
+    -  `certfile`:  The certificate of this broker.
+    -  `keyfile`:  The private key of this broker.
+    -  `verify`:  If "verify_peer" is set, the client must present a certificate that will be verified by the broker.
+    -  `fail_if_no_peer_cert`:  This is supposed to mean that the connection will fail if the peer does not preset a certificate and this property is set to true.  But do to a bug in Erlang, if the `{verify, verify_peer}` option is set, `fail_if_no_peer_cert` is ignored if set to false (i.e.: client will have to supply a validated certificate).
+
+3.  Restart RabbitMQ.
+
+  `sudo service rabbitmq-server restart`
+
+## Verifying SSL
+
+1.  We have supplied a test client to verify if the SSL connection works in the [CMF-AMQP-Configuration Repository](https://github.com/Berico-Technologies/CMF-AMQP-Configuration).
+
+2.  Alternatively, the RabbitMQ Management Console lists the available ports for clients to connect on the main page:
+
+  <a href="https://dl.dropbox.com/u/12311372/RabbitMQ-Doc/i12.png"><img style="max-height: 500px;"
+  src="https://dl.dropbox.com/u/12311372/RabbitMQ-Doc/i12.png">
+</a>
+
+
+
+
+# Securing the RabbitMQ Management Console with SSL.
+
+
+
 
 ########################################################
 
