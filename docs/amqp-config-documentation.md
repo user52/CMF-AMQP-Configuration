@@ -71,14 +71,15 @@ Network settings will depend on your network environment.  The following reflect
 
   Make your config file look something like this.
 
-  `DEVICE="eth0"
+  ```DEVICE="eth0"
   BOOTPROTO="dhcp"
   NM_CONTROLLED="yes"
   ONBOOT=yes
   TYPE="Ethernet"
   UUID="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
   IPV6INIT=yes
-  HWADDR=xx:xx:xx:xx:xx:xx`
+  HWADDR=xx:xx:xx:xx:xx:xx
+```
 
   > Where the x's are specific to your machine.  Much of this information will already by in the file.  You will probably only need to set "ONBOOT" to "yes".
 
@@ -240,7 +241,7 @@ Using either method, we need to open of 1-3 ports, depending on your use-case:
 
   Your current file should look like this.
 
-  `# Firewall configuration written by system-config-firewall
+  ```# Firewall configuration written by system-config-firewall
   \# Manual customization of this file is not recommended.
   *filter
   :INPUT ACCEPT [0:0]
@@ -252,17 +253,19 @@ Using either method, we need to open of 1-3 ports, depending on your use-case:
   -A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
   -A INPUT -j REJECT --reject-with icmp-host-prohibited
   -A FORWARD -j REJECT --reject-with icmp-host-prohibited
-  COMMIT`
+  COMMIT
+```
   
   We want to add the following entries to the top of the file, right under the `:OUTPUT ACCEPT [2:120]` line: 
   
-  `-A INPUT -p tcp -m tcp --dport 15672 -j ACCEPT
+  ```-A INPUT -p tcp -m tcp --dport 15672 -j ACCEPT
   -A INPUT -p tcp -m tcp --dport 5672 -j ACCEPT
-  -A INPUT -p tcp -m tcp --dport 5673 -j ACCEPT`
+  -A INPUT -p tcp -m tcp --dport 5673 -j ACCEPT
+```
   
   Your file should look something like this when you are done.
   
-  `*filter
+  ```*filter
   :INPUT ACCEPT [0:0]
   :FORWARD ACCEPT [0:0]
   :OUTPUT ACCEPT [2:120]
@@ -275,7 +278,8 @@ Using either method, we need to open of 1-3 ports, depending on your use-case:
   -A INPUT -p tcp -m state --state NEW -m tcp --dport 22 -j ACCEPT 
   -A INPUT -j REJECT --reject-with icmp-host-prohibited 
   -A FORWARD -j REJECT --reject-with icmp-host-prohibited 
-  COMMIT`
+  COMMIT
+```
 
 2.  Restart *iptables*.
 
@@ -289,9 +293,10 @@ Using either method, we need to open of 1-3 ports, depending on your use-case:
   
   So to unblock the non-SSL, SSL and Management Console:
   
-  `sudo iptables -I INPUT 1 -p tcp --dport 5672 -j ACCEPT
+  ```sudo iptables -I INPUT 1 -p tcp --dport 5672 -j ACCEPT
   sudo iptables -I INPUT 1 -p tcp --dport 5673 -j ACCEPT
-  sudo iptables -I INPUT 1 -p tcp --dport 15672 -j ACCEPT`
+  sudo iptables -I INPUT 1 -p tcp --dport 15672 -j ACCEPT
+```
 
   > Note that the `-I INPUT 1` literally means to register this rule before other rules.  If you don't do this, *iptables* will not open your port because a previous rule will supersede that rule, blocking access to the port.
 
@@ -330,8 +335,9 @@ More importantly, the steps in this tutorial need to be performed on every node 
 
   b.  Instruct the Erlang kernel to use the following port range (9100-9105) for the Erlang Distribution protocol:
 
-  `[{kernel, [ {inet_dist_listen_min, 9100}, 
-                {inet_dist_listen_max, 9105} ]}].`
+  ```[{kernel, [ {inet_dist_listen_min, 9100}, 
+                {inet_dist_listen_max, 9105} ]}].
+```
 
   > RabbitMQ's configuration is quite literally an Erlang *tuple*.  That's the reason why it has a *funky* syntax.
 
@@ -401,16 +407,18 @@ There are two ways to cluster RabbitMQ.  The first is to use the commands provid
 
   For this tutorial, it would look like:
 
-  `127.0.0.1 localhost rabbit3 rabbit3.warren localhost4
+  ```127.0.0.1 localhost rabbit3 rabbit3.warren localhost4
   192.168.192.154 rabbit1 rabbit1.warren
-  192.168.192.153 rabbit2 rabbit2.warren`
+  192.168.192.153 rabbit2 rabbit2.warren
+```
 
   > We've also added the `rabbit3` entry to `localhost` so the machine knows it should loopback to itself.
 
   Save the file and you are done.  Make sure all the nodes can reach each other:
 
-  `ping rabbit1
-  ping rabbit2`
+  ```ping rabbit1
+  ping rabbit2
+```
 
   > Press `control-z` to stop the `ping` command from *pinging* the server.
 
@@ -484,15 +492,17 @@ There are two ways to cluster RabbitMQ.  The first is to use the commands provid
 
   To change the local cluster node to another type (back to disc):
 
-  `sudo rabbitmqctl stop_app
+  ```sudo rabbitmqctl stop_app
   sudo rabbitmqctl change_cluster_node_type disc
-  sudo rabbitmqctl start_app`
+  sudo rabbitmqctl start_app
+```
 
   Alternatively to change a disc node to a ram node:
 
-  `sudo rabbitmqctl stop_app
+  ```sudo rabbitmqctl stop_app
   sudo rabbitmqctl change_cluster_node_type ram
-  sudo rabbitmqctl start_app`
+  sudo rabbitmqctl start_app
+```
 
 ## Verify the Cluster's Status
 
@@ -614,25 +624,27 @@ In the event that you need to do this work on your own, we have a created a set 
 
   Preserving the structure created by the CMF-AMQP-Configuration project, copy those files into the directory:
 
-  `sudo mkdir -p /etc/rabbitmq/ssl/ca
+  ```sudo mkdir -p /etc/rabbitmq/ssl/ca
   sudo mkdir /etc/rabbitmq/ssl/server
   sudo cp {/path/to/CMF-AMQP-Configuration/ssl/}ca/cacert.pem \
       /etc/rabbitmq/ssl/ca/cacert.pem
   sudo cp {/path/to/CMF-AMQP-Configuration/ssl/}server/{hostname}.key.pem \
       /etc/rabbitmq/ssl/server/{hostname}.key.pem
   sudo cp {/path/to/CMF-AMQP-Configuration/ssl/}server/{hostname}.cert.pem \
-      /etc/rabbitmq/ssl/server/{hostname}.cert.pem`
+      /etc/rabbitmq/ssl/server/{hostname}.cert.pem
+```
 
   Using our example, it looks like:
 
-  `sudo mkdir -p /etc/rabbitmq/ssl/ca
+  ```sudo mkdir -p /etc/rabbitmq/ssl/ca
   sudo mkdir /etc/rabbitmq/ssl/server
   sudo cp {/path/to/CMF-AMQP-Configuration/ssl/}ca/cacert.pem \
       /etc/rabbitmq/ssl/ca/cacert.pem
   sudo cp {/path/to/CMF-AMQP-Configuration/ssl/}server/rabbit3.key.pem \
       /etc/rabbitmq/ssl/server/rabbit3.key.pem
   sudo cp {/path/to/CMF-AMQP-Configuration/ssl/}server/rabbit3.cert.pem \
-      /etc/rabbitmq/ssl/server/rabbit3.cert.pem`
+      /etc/rabbitmq/ssl/server/rabbit3.cert.pem
+```
 
 ## Configuring RabbitMQ to support SSL Connections
 
@@ -646,7 +658,7 @@ To configure RabbitMQ to support SSL, you simply need to add some minor configur
 
 2.  Add the following configuration:
 
-  `[
+  ```[
     {rabbit, [ {tcp_listeners, [5672] },
                {ssl_listeners, [5673] },
                {ssl_options, [
@@ -656,11 +668,12 @@ To configure RabbitMQ to support SSL, you simply need to add some minor configur
                  {verify, verify_peer},
                  {fail_if_no_peer_cert, false }]}
     ]}
-  ].`
+  ].
+```
 
   Where our configuration looks like:
 
-  `[
+  ```[
     {rabbit, [ {tcp_listeners, [5672] },
                {ssl_listeners, [5673] },
                {ssl_options, [
@@ -670,11 +683,12 @@ To configure RabbitMQ to support SSL, you simply need to add some minor configur
                  {verify, verify_peer},
                  {fail_if_no_peer_cert, true }]}
     ]}
-  ].`
+  ].
+```
 
   And if you are already clustered with `iptables` configured:
 
-  `[
+  ```[
     {rabbit, [ {tcp_listeners, [5672] },
                {ssl_listeners, [5673] },
                {ssl_options, [
@@ -686,7 +700,8 @@ To configure RabbitMQ to support SSL, you simply need to add some minor configur
     ]},
     {kernel, [ {inet_dist_listen_min, 9100}, 
                 {inet_dist_listen_max, 9105} ]}
-  ].`
+  ].
+```
 
   There are some important options to note:
 
@@ -731,7 +746,7 @@ In *Configuring SSL for RabbitMQ*, we took the convention of using the `/etc/rab
 
 2.  Add a configuration entry:
 
-  `[{rabbitmq_management,
+  ```[{rabbitmq_management,
       [{listener, 
         [{port, 15672},
          {ssl, true},
@@ -741,11 +756,12 @@ In *Configuring SSL for RabbitMQ*, we took the convention of using the `/etc/rab
             {keyfile,    "/etc/rabbitmq/ssl/server/{hostname}.key.pem"}]}
          ]}
     ]}
-  ].`
+  ].
+```
 
   And of course, using our example:
 
-  `[{rabbitmq_management,
+  ```[{rabbitmq_management,
       [{listener, 
         [{port, 15672},
          {ssl, true},
@@ -755,11 +771,12 @@ In *Configuring SSL for RabbitMQ*, we took the convention of using the `/etc/rab
             {keyfile, "/etc/rabbitmq/ssl/server/rabbit3.key.pem"}]}
          ]}
     ]}
-  ].`
+  ].
+```
 
   More importantly, the config with AMQP/SSL, `iptables` port range for clustering, and the Management console using SSL:
 
-  `[
+  ```[
     {rabbit, [ {tcp_listeners, [5672] },
                {ssl_listeners, [5673] },
                {ssl_options, [
@@ -781,7 +798,8 @@ In *Configuring SSL for RabbitMQ*, we took the convention of using the `/etc/rab
      ]},
     {kernel, [ {inet_dist_listen_min, 9100}, 
                 {inet_dist_listen_max, 9105} ]}
-  ].`
+  ].
+```
 
 3.  Restart RabbitMQ.
 
@@ -848,7 +866,7 @@ Open your browser to the RabbitMQ Management Console, but don't forget to use "h
 
 2.  Restart RabbitMQ.
 
-  sudo service rabbitmq-server restart`
+  `sudo service rabbitmq-server restart`
 
 ##  Verify Certificate Authentication
 
