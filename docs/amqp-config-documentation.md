@@ -802,7 +802,7 @@ Open your browser to the RabbitMQ Management Console, but don't forget to use "h
 
   Add `	{verify, verify_peer}, {fail_if_no_peer_cert, true }` to the `ssl_options`  of `rabbitmq_management`.
 
-  `[{rabbitmq_management,
+  ```[{rabbitmq_management,
       [{listener, 
         [{port, 15672},
          {ssl, true},
@@ -814,11 +814,11 @@ Open your browser to the RabbitMQ Management Console, but don't forget to use "h
             {fail_if_no_peer_cert, true }]}
          ]}
     ]}
-  ].`
+  ].```
 
   Which now looks like:
 
-  `[
+  ```[
     {rabbit, [ {tcp_listeners, [5672] },
                {ssl_listeners, [5673] },
                {ssl_options, [
@@ -842,11 +842,11 @@ Open your browser to the RabbitMQ Management Console, but don't forget to use "h
      ]},
     {kernel, [ {inet_dist_listen_min, 9100}, 
                 {inet_dist_listen_max, 9105} ]}
-  ].`
+  ].```
 
 2.  Restart RabbitMQ.
 
-  `sudo service rabbitmq-server restart`
+  sudo service rabbitmq-server restart`
 
 ##  Verify Certificate Authentication
 
