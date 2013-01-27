@@ -814,7 +814,8 @@ Open your browser to the RabbitMQ Management Console, but don't forget to use "h
             {fail_if_no_peer_cert, true }]}
          ]}
     ]}
-  ].```
+  ].
+```
 
   Which now looks like:
 
@@ -842,7 +843,8 @@ Open your browser to the RabbitMQ Management Console, but don't forget to use "h
      ]},
     {kernel, [ {inet_dist_listen_min, 9100}, 
                 {inet_dist_listen_max, 9105} ]}
-  ].```
+  ].
+```
 
 2.  Restart RabbitMQ.
 
