@@ -1,0 +1,1 @@
+Proxying-Load Balancing RabbitMQ with HA Proxy
